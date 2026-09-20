@@ -26,6 +26,12 @@ jobs:
         with:
           nix_path: nixpkgs=channel:nixos-unstable
 
+      - name: Setup Cachix
+        uses: cachix/cachix-action@v15
+        with:
+          name: aloys23
+          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+
       - name: Extract version info
         id: version
         run: |
@@ -48,27 +54,38 @@ jobs:
           RAW_HASH=$(nix-prefetch-url --unpack "https://github.com/Aloys233/quickflare/archive/refs/tags/${TAG}.tar.gz" 2>/dev/null | tail -n 1 | tr -d '[:space:]')
           SRC_HASH=$(nix hash convert --hash-algo sha256 --to sri "$RAW_HASH")
           echo "Source Hash: $SRC_HASH"
+          python3 .github/scripts/update-package.py --version "$VERSION" --src-hash "$SRC_HASH"
 
-          # 2. 先更新版本号、源码哈希，将依赖哈希置为假哈希以触发重算
-          python3 .github/scripts/update-package.py "$VERSION" "$SRC_HASH" "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=" "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
-
-          # 3. 运行构建以获取真实的 pnpmDeps 哈希
+          # 2. 独立解析真实的 pnpmDeps 哈希
           echo "Resolving pnpmDeps hash..."
-          PNPM_OUT=$(nix build .#quickflare --accept-flake-config 2>&1 || true)
+          python3 .github/scripts/update-package.py --pnpm-hash "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+          PNPM_OUT=$(nix build .#quickflare.pnpmDeps --accept-flake-config 2>&1 || true)
           PNPM_HASH=$(echo "$PNPM_OUT" | grep -oP 'got:\s+\K(sha256-[a-zA-Z0-9+/=]+)' | head -n 1)
           if [ -n "$PNPM_HASH" ]; then
             echo "Found pnpmDeps hash: $PNPM_HASH"
-            python3 .github/scripts/update-package.py "$VERSION" "$SRC_HASH" "$PNPM_HASH" "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+            python3 .github/scripts/update-package.py --pnpm-hash "$PNPM_HASH"
+          else
+            echo "Error: Failed to resolve pnpmDeps hash!"
+            echo "$PNPM_OUT"
+            exit 1
           fi
 
-          # 4. 运行构建以获取真实的 cargoHash
+          # 3. 独立解析真实的 cargoHash
           echo "Resolving cargoHash..."
-          CARGO_OUT=$(nix build .#quickflare --accept-flake-config 2>&1 || true)
+          python3 .github/scripts/update-package.py --cargo-hash "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+          CARGO_OUT=$(nix build .#quickflare.cargoDeps --accept-flake-config 2>&1 || true)
           CARGO_HASH=$(echo "$CARGO_OUT" | grep -oP 'got:\s+\K(sha256-[a-zA-Z0-9+/=]+)' | head -n 1)
           if [ -n "$CARGO_HASH" ]; then
             echo "Found cargoHash: $CARGO_HASH"
-            python3 .github/scripts/update-package.py "$VERSION" "$SRC_HASH" "$PNPM_HASH" "$CARGO_HASH"
+            python3 .github/scripts/update-package.py --cargo-hash "$CARGO_HASH"
+          else
+            echo "Error: Failed to resolve cargoHash!"
+            echo "$CARGO_OUT"
+            exit 1
           fi
+
+      - name: Build and Cache Quickflare
+        run: nix build .#quickflare --print-build-logs --accept-flake-config
 
       - name: Commit and push changes
         uses: stefanzweifel/git-auto-commit-action@v5
