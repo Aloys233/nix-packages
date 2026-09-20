@@ -49,18 +49,8 @@ jobs:
           SRC_HASH=$(nix hash convert --hash-algo sha256 --to sri "$RAW_HASH")
           echo "Source Hash: $SRC_HASH"
 
-          # 2. 先写入新版本号和新源码哈希，将依赖哈希置为假哈希以触发 Nix 校验
-          python3 -c "
-          import re
-          with open('pkgs/quickflare/default.nix', 'r') as f:
-              c = f.read()
-          c = re.sub(r'version = \"[^\"]*\";', f'version = \"$VERSION\";', c, count=1)
-          c = re.sub(r'(src = fetchFromGitHub \{[\s\S]*?hash = \")[^\"]*(\";)', rf'\g<1>$SRC_HASH\g<2>', c)
-          c = re.sub(r'(pnpmDeps = fetchPnpmDeps \{[\s\S]*?hash = \")[^\"]*(\";)', r'\g<1>sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=\g<2>', c)
-          c = re.sub(r'cargoHash = \"[^\"]*\";', 'cargoHash = \"sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=\";', c)
-          with open('pkgs/quickflare/default.nix', 'w') as f:
-              f.write(c)
-          "
+          # 2. 先更新版本号、源码哈希，将依赖哈希置为假哈希以触发重算
+          python3 .github/scripts/update-package.py "$VERSION" "$SRC_HASH" "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=" "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
 
           # 3. 运行构建以获取真实的 pnpmDeps 哈希
           echo "Resolving pnpmDeps hash..."
@@ -68,14 +58,7 @@ jobs:
           PNPM_HASH=$(echo "$PNPM_OUT" | grep -oP 'got:\s+\K(sha256-[a-zA-Z0-9+/=]+)' | head -n 1)
           if [ -n "$PNPM_HASH" ]; then
             echo "Found pnpmDeps hash: $PNPM_HASH"
-            python3 -c "
-            import re
-            with open('pkgs/quickflare/default.nix', 'r') as f:
-                c = f.read()
-            c = re.sub(r'(pnpmDeps = fetchPnpmDeps \{[\s\S]*?hash = \")[^\"]*(\";)', rf'\g<1>$PNPM_HASH\g<2>', c)
-            with open('pkgs/quickflare/default.nix', 'w') as f:
-                f.write(c)
-            "
+            python3 .github/scripts/update-package.py "$VERSION" "$SRC_HASH" "$PNPM_HASH" "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
           fi
 
           # 4. 运行构建以获取真实的 cargoHash
@@ -84,14 +67,7 @@ jobs:
           CARGO_HASH=$(echo "$CARGO_OUT" | grep -oP 'got:\s+\K(sha256-[a-zA-Z0-9+/=]+)' | head -n 1)
           if [ -n "$CARGO_HASH" ]; then
             echo "Found cargoHash: $CARGO_HASH"
-            python3 -c "
-            import re
-            with open('pkgs/quickflare/default.nix', 'r') as f:
-                c = f.read()
-            c = re.sub(r'cargoHash = \"[^\"]*\";', f'cargoHash = \"$CARGO_HASH\";', c)
-            with open('pkgs/quickflare/default.nix', 'w') as f:
-                f.write(c)
-            "
+            python3 .github/scripts/update-package.py "$VERSION" "$SRC_HASH" "$PNPM_HASH" "$CARGO_HASH"
           fi
 
       - name: Commit and push changes
