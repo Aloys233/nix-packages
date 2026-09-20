@@ -59,7 +59,8 @@ rustPlatform.buildRustPackage (finalAttrs: {
 
   postFixup = ''
     wrapProgram $out/bin/quickflare \
-      --prefix PATH : ${lib.makeBinPath [ cloudflared ]}
+      --prefix PATH : ${lib.makeBinPath [ cloudflared ]} \
+      --prefix LD_LIBRARY_PATH : ${lib.makeLibraryPath [ libayatana-appindicator ]}
   '';
 
   meta = with lib; {
