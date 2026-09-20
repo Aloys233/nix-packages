@@ -17,12 +17,12 @@
 }:
 
 let
-  version = "0.1.3";
+  version = "0.1.4";
   src = fetchFromGitHub {
     owner = "Aloys233";
     repo = "quickflare";
     tag = "v${version}";
-    hash = "sha256-VXBWpTXb74FvopViq7Q0bwVA3Zu+Zhrl/Hje93OEFRs=";
+    hash = "sha256-SfPPHC4bNSgAgYK9NzZCrpEby8ZYJj3H69oYI1TCQ74=";
   };
 in
 rustPlatform.buildRustPackage (finalAttrs: {
@@ -33,13 +33,13 @@ rustPlatform.buildRustPackage (finalAttrs: {
     pname = "${finalAttrs.pname}-pnpm-deps";
     inherit (finalAttrs) version src;
     fetcherVersion = 4;
-    hash = "sha256-rdLCdwIt15Ie/qNChWWlkvRIQMKVMryJ8T3XpOOsALw=";
+    hash = "sha256-m8bCVYDW5xTl57pL1jypn9RgS5CnIyCvID8V8RTEu3g=";
   };
 
   cargoRoot = "src-tauri";
   buildAndTestSubdir = finalAttrs.cargoRoot;
 
-  cargoHash = "sha256-bwkDJ+FDeVJ1s3GfsqZOwopB8usJrDQIrHkVW4euxWQ=";
+  cargoHash = "sha256-m8bCVYDW5xTl57pL1jypn9RgS5CnIyCvID8V8RTEu3g=";
 
   nativeBuildInputs = [
     nodejs
