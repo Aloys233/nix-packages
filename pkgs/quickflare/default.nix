@@ -39,7 +39,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
   cargoRoot = "src-tauri";
   buildAndTestSubdir = finalAttrs.cargoRoot;
 
-  cargoHash = lib.fakeHash;
+  cargoHash = "sha256-bwkDJ+FDeVJ1s3GfsqZOwopB8usJrDQIrHkVW4euxWQ=";
 
   nativeBuildInputs = [
     nodejs
