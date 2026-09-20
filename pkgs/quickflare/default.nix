@@ -32,7 +32,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
   pnpmDeps = fetchPnpmDeps {
     pname = "${finalAttrs.pname}-pnpm-deps";
     inherit (finalAttrs) version src;
-    fetcherVersion = 2;
+    fetcherVersion = 4;
     hash = lib.fakeHash;
   };
 
