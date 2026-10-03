@@ -11,14 +11,14 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "komiraquake";
-  version = "1.0.1";
+  version = "1.0.2";
 
   # 对应 tag v1.0.0；auto-update 会由 tag 解析出 commit 回填 rev/hash。
   src = fetchFromGitHub {
     owner = "Aloys233";
     repo = "KomiraQuake-Desktop";
-    rev = "c44121f222c1dd8494689acdc75de1ca3b46193e";
-    hash = "sha256-SzYfAcOA7hr8D/ZP3c7UHHCoOtuVGx6do0vstlbCtrg=";
+    rev = "664d7053eab5417576362cc001e0975d2577efb3";
+    hash = "sha256-R7zqtrPDNlfOJCVXukHoLA8Xux7+8ikfmoGFJGJ5umo=";
   };
 
   nativeBuildInputs = [
