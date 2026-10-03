@@ -17,8 +17,8 @@ stdenv.mkDerivation (finalAttrs: {
   src = fetchFromGitHub {
     owner = "Aloys233";
     repo = "KomiraQuake-Desktop";
-    rev = "2ac11e6119f01f06d9a4329aa3c0a38345796de9";
-    hash = "sha256-ca8AYDq6mkPA8PD4r8Q7X5tj7PuuHnCbqb7WKnotz3g=";
+    rev = "f882e3f4a3b5873e9c0ee3252d9b5f7a9eb02d0d";
+    hash = "sha256-Y1G0oxiqME0Hb2tTTd5pV18CgpLyGX9Ctx8bfRQbMOo=";
   };
 
   nativeBuildInputs = [
