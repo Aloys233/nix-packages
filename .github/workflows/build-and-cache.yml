@@ -26,3 +26,6 @@ jobs:
 
       - name: Build Quickflare
         run: nix build .#quickflare --print-build-logs --accept-flake-config
+
+      - name: Build KomiraQuake
+        run: nix build .#komiraquake --print-build-logs --accept-flake-config

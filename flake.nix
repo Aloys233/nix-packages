@@ -19,6 +19,7 @@
     let
       overlay = final: prev: {
         quickflare = final.callPackage ./pkgs/quickflare { };
+        komiraquake = final.callPackage ./pkgs/komiraquake { };
       };
     in
     flake-utils.lib.eachDefaultSystem (system:
@@ -30,11 +31,13 @@
       in {
         packages = {
           quickflare = pkgs.quickflare;
+          komiraquake = pkgs.komiraquake;
           default = pkgs.quickflare;
         };
 
         apps = {
           quickflare = flake-utils.lib.mkApp { drv = pkgs.quickflare; };
+          komiraquake = flake-utils.lib.mkApp { drv = pkgs.komiraquake; };
           default = self.apps.${system}.quickflare;
         };
       }

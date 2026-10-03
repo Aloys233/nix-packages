@@ -7,6 +7,7 @@ def main():
     parser = argparse.ArgumentParser(description="Update Quickflare package definition in default.nix")
     parser.add_argument("--version", help="Package version (without 'v' prefix)")
     parser.add_argument("--src-hash", help="Source tarball SRI hash")
+    parser.add_argument("--rev", help="Pinned git revision (commit SHA) for fetchFromGitHub")
     parser.add_argument("--pnpm-hash", help="pnpmDeps SRI hash")
     parser.add_argument("--cargo-hash", help="cargoHash SRI hash")
     parser.add_argument("--file", default="pkgs/quickflare/default.nix", help="Path to default.nix")
@@ -19,6 +20,10 @@ def main():
     # 更新版本号
     if args.version:
         content = re.sub(r'version = "[^"]*";', f'version = "{args.version}";', content, count=1)
+
+    # 更新固定 rev（仅对使用 fetchFromGitHub rev 固定的包生效）
+    if args.rev:
+        content = re.sub(r'rev = "[^"]*";', f'rev = "{args.rev}";', content, count=1)
 
     # 更新 src hash
     if args.src_hash:
