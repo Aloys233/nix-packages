@@ -10,7 +10,7 @@ def main():
     parser.add_argument("--rev", help="Pinned git revision (commit SHA) for fetchFromGitHub")
     parser.add_argument("--pnpm-hash", help="pnpmDeps SRI hash")
     parser.add_argument("--cargo-hash", help="cargoHash SRI hash")
-    parser.add_argument("--file", default="pkgs/quickflare/default.nix", help="Path to default.nix")
+    parser.add_argument("--file", default="pkgs/self/quickflare/default.nix", help="Path to default.nix")
 
     args = parser.parse_args()
 

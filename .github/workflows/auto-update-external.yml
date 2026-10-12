@@ -1,0 +1,50 @@
+name: "Auto Update External Packages"
+
+on:
+  schedule:
+    # 每天 UTC 02:00（北京时间 10:00）运行一次
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: 'Force update even if version matches'
+        type: boolean
+        default: false
+
+jobs:
+  check-and-update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v27
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+
+      - name: Check for updates
+        id: checker
+        run: |
+          FORCE_FLAG=""
+          if [ "${{ github.event.inputs.force }}" = "true" ]; then
+            FORCE_FLAG="--force"
+          fi
+          python3 .github/scripts/update-external.py $FORCE_FLAG
+
+      - name: Test Build External Packages (No Cachix)
+        if: steps.checker.outputs.has_updates == 'true'
+        run: |
+          echo "Verifying updated external packages build without caching to Cachix..."
+          NIXPKGS_ALLOW_UNFREE=1 nix build .#chatgpt --impure --no-link --print-build-logs --accept-flake-config
+
+      - name: Commit and push changes
+        if: steps.checker.outputs.has_updates == 'true'
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(external): update ${{ steps.checker.outputs.updated_packages }}"
+          file_pattern: "pkgs/external/**/default.nix"

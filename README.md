@@ -1,6 +1,9 @@
 # Aloys's Nix Packages Repository
 
-个人 Nix 软件源仓库，包含 Quickflare、KomiraQuake 等自研工具喵。支持直接运行、系统集成以及 Cachix 二进制加速。
+个人 Nix 软件源仓库喵！包含自研工具与常用第三方软件。支持直接运行、系统集成以及 Cachix 二进制加速。
+
+- **自研软件 (`pkgs/self/`)**：Quickflare、KomiraQuake 等（在上游仓库发布时由 GitHub Actions 事件实时通知更新喵）。
+- **第三方软件 (`pkgs/external/`)**：ChatGPT Desktop 等（通过 GitHub Actions 定时任务每天自动轮询上游发布并同步更新喵）。
 
 ---
 
@@ -20,6 +23,14 @@ nix run github:Aloys233/nix-packages#komiraquake
 
 > KomiraQuake 的语音播报依赖 speech-dispatcher，NixOS 上需开启：
 > `services.speechd.enable = true;`
+
+### ChatGPT Desktop (官方 Linux 客户端)
+
+```bash
+nix run github:Aloys233/nix-packages#chatgpt --impure
+```
+
+> ChatGPT 支持读取 `~/.config/chatgpt-flags.conf` 自定义启动参数（如 Wayland 标志）喵。此外也可用别名 `chatgpt-desktop`。
 
 ---
 
@@ -81,7 +92,9 @@ nix run github:Aloys233/nix-packages#komiraquake
 
 ## 🚀 Cachix 二进制加速
 
-本仓库已配置 Cachix 二进制缓存（`aloys23`），无需本地编译：
+本仓库为自研工具配置了 Cachix 二进制缓存（`aloys23`），无需本地编译：
+
+> 💡 **提示**：Cachix 缓存主要用于加速自研软件的编译产物喵。第三方应用（如 ChatGPT Desktop）直接解包官方 Release deb 并就地 patch，不推送到个人 Cachix 缓存中喵。
 
 ```bash
 # 方式 1：CLI 一键启用
