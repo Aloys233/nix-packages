@@ -1,24 +1,35 @@
 { lib
 , stdenv
 , fetchFromGitHub
+, fetchgit
 , cmake
 , ninja
 , pkg-config
 , qt6
+, curl
+, zlib
 , speechd
 , gst_all_1
 }:
 
+let
+  sentryNative = fetchgit {
+    url = "https://github.com/getsentry/sentry-native.git";
+    rev = "0.12.1";
+    fetchSubmodules = true;
+    hash = "sha256-PlV+Rqvf5KjeEDsZt9+qcfRwwcLFY0PeUmtLQ87BFrU=";
+  };
+in
 stdenv.mkDerivation (finalAttrs: {
   pname = "komiraquake";
-  version = "1.1.2";
+  version = "1.2.2";
 
-  # 对应 tag v1.0.0；auto-update 会由 tag 解析出 commit 回填 rev/hash。
+  # 对应 tag v1.2.2；源码和 sentry-native 都在 Nix 沙箱外预取，构建阶段不联网。
   src = fetchFromGitHub {
     owner = "Aloys233";
     repo = "KomiraQuake-Desktop";
-    rev = "2cbd54607f5bd6fd56c9493f9727da58f3f7272d";
-    hash = "sha256-FE2lrS4gnVsTuBJFINc3r9ty2zANP5DLxd9+zWcYzFI=";
+    rev = "bcb89ec804c7322123f9cda6cf04efa6253a8319";
+    hash = "sha256-rt2+T1EGcqAkBhiSzADYJ6aB423WtTOOPBM/4WnTpR8=";
   };
 
   nativeBuildInputs = [
@@ -29,6 +40,7 @@ stdenv.mkDerivation (finalAttrs: {
   ];
 
   buildInputs = [
+    curl
     qt6.qtbase
     qt6.qtdeclarative
     qt6.qtwebsockets
@@ -36,11 +48,13 @@ stdenv.mkDerivation (finalAttrs: {
     qt6.qtmultimedia
     qt6.qtspeech
     speechd
+    zlib
   ];
 
   cmakeFlags = [
     (lib.cmakeBool "BUILD_TESTING" false)
     (lib.cmakeFeature "CMAKE_BUILD_TYPE" "Release")
+    (lib.cmakeFeature "FETCHCONTENT_SOURCE_DIR_SENTRY_NATIVE" "${sentryNative}")
   ];
 
   # 资源在 CMake 里 install 到 share/komiraquake/assets，
