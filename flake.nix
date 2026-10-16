@@ -21,6 +21,7 @@
         # 自研软件
         quickflare = final.callPackage ./pkgs/self/quickflare { };
         komiraquake = final.callPackage ./pkgs/self/komiraquake { };
+        otomusic = final.callPackage ./pkgs/self/otomusic { };
 
         # 第三方软件
         chatgpt = final.callPackage ./pkgs/external/chatgpt { };
@@ -38,6 +39,7 @@
         packages = {
           quickflare = pkgs.quickflare;
           komiraquake = pkgs.komiraquake;
+          otomusic = pkgs.otomusic;
           chatgpt = pkgs.chatgpt;
           chatgpt-desktop = pkgs.chatgpt-desktop;
           default = pkgs.quickflare;
@@ -46,6 +48,7 @@
         apps = {
           quickflare = flake-utils.lib.mkApp { drv = pkgs.quickflare; };
           komiraquake = flake-utils.lib.mkApp { drv = pkgs.komiraquake; };
+          otomusic = flake-utils.lib.mkApp { drv = pkgs.otomusic; };
           chatgpt = flake-utils.lib.mkApp { drv = pkgs.chatgpt; };
           default = self.apps.${system}.quickflare;
         };

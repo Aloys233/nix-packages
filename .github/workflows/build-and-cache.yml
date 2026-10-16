@@ -29,3 +29,7 @@ jobs:
 
       - name: Build KomiraQuake
         run: nix build .#komiraquake --print-build-logs --accept-flake-config
+
+      - name: Build OtoMusic
+        run: nix build .#otomusic --print-build-logs --accept-flake-config
+

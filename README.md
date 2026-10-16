@@ -2,7 +2,7 @@
 
 个人 Nix 软件源仓库喵！包含自研工具与常用第三方软件。支持直接运行、系统集成以及 Cachix 二进制加速。
 
-- **自研软件 (`pkgs/self/`)**：Quickflare、KomiraQuake 等（在上游仓库发布时由 GitHub Actions 事件实时通知更新喵）。
+- **自研软件 (`pkgs/self/`)**：Quickflare、KomiraQuake、OtoMusic 等（在上游仓库发布时由 GitHub Actions 事件实时通知更新喵）。
 - **第三方软件 (`pkgs/external/`)**：ChatGPT Desktop 等（通过 GitHub Actions 定时任务每天自动轮询上游发布并同步更新喵）。
 
 ---
@@ -23,6 +23,14 @@ nix run github:Aloys233/nix-packages#komiraquake
 
 > KomiraQuake 的语音播报依赖 speech-dispatcher，NixOS 上需开启：
 > `services.speechd.enable = true;`
+
+### OtoMusic 音乐播放器
+
+专为 Navidrome / Subsonic 打造的桌面音乐播放器喵！内置 mpv 高音质解码支持与全平台托盘控制。
+
+```bash
+nix run github:Aloys233/nix-packages#otomusic
+```
 
 ### ChatGPT Desktop (官方 Linux 客户端)
 
