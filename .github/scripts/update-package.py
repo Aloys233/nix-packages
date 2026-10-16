@@ -22,8 +22,16 @@ def main():
         content = re.sub(r'version = "[^"]*";', f'version = "{args.version}";', content, count=1)
 
     # 更新固定 rev（仅对使用 fetchFromGitHub rev 固定的包生效）
+    # 必须限定在 `src = fetchFromGitHub { ... }` 块内：包可能在上方还有别的
+    # 带 rev 的取源（如 komiraquake 的 sentryNative = fetchgit { rev = "0.12.1"; }），
+    # 否则 count=1 会改到那个 rev，而真正的源码 rev 原封不动 —— 表现为
+    # "specified <新 hash> got <旧 hash>" 的 fixed-output hash mismatch。
     if args.rev:
-        content = re.sub(r'rev = "[^"]*";', f'rev = "{args.rev}";', content, count=1)
+        content = re.sub(
+            r'(src = fetchFromGitHub \{[\s\S]*?rev = ")[^"]*(";)',
+            rf'\g<1>{args.rev}\g<2>',
+            content
+        )
 
     # 更新 src hash
     if args.src_hash:
