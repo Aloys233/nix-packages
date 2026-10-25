@@ -22,14 +22,14 @@ let
 in
 stdenv.mkDerivation (finalAttrs: {
   pname = "komiraquake";
-  version = "1.3.5";
+  version = "1.3.6";
 
   # 对应 tag v1.2.3；源码和 sentry-native 都在 Nix 沙箱外预取，构建阶段不联网。
   src = fetchFromGitHub {
     owner = "Aloys233";
     repo = "KomiraQuake-Desktop";
-    rev = "148dcbe3d4031998f6c3649a3026c154b30ba5f8";
-    hash = "sha256-7cpZXReRnqDA1FqYjRIv0Joh8GH1ydST7nkVdOa6WY8=";
+    rev = "f708196275c881b8667ffcf84db8086caece197d";
+    hash = "sha256-dZGLU5ft/6l2PepnB5MNgXKDTyY3Oyp3js6m8GmCAvE=";
   };
 
   nativeBuildInputs = [
