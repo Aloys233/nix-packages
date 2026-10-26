@@ -3,7 +3,7 @@
 个人 Nix 软件源仓库喵！包含自研工具与常用第三方软件。支持直接运行、系统集成以及 Cachix 二进制加速。
 
 - **自研软件 (`pkgs/self/`)**：Quickflare、KomiraQuake、OtoMusic 等（在上游仓库发布时由 GitHub Actions 事件实时通知更新喵）。
-- **第三方软件 (`pkgs/external/`)**：ChatGPT Desktop 等（通过 GitHub Actions 定时任务每天自动轮询上游发布并同步更新喵）。
+- **第三方软件 (`pkgs/external/`)**：ChatGPT Desktop、nanoMuse Desktop 等（通过 GitHub Actions 定时任务每天自动轮询上游发布并同步更新喵）。
 
 ---
 
@@ -39,6 +39,16 @@ nix run github:Aloys233/nix-packages#chatgpt --impure
 ```
 
 > ChatGPT 支持读取 `~/.config/chatgpt-flags.conf` 自定义启动参数（如 Wayland 标志）喵。此外也可用别名 `chatgpt-desktop`。
+
+### nanoMuse Desktop
+
+基于 DeepSeek Harness 的 nanoMuse 桌面客户端喵！
+
+```bash
+nix run github:Aloys233/nix-packages#nanomuse --impure
+```
+
+> nanoMuse 支持读取 `~/.config/nanomuse-flags.conf` 自定义启动参数（如 Wayland 标志）喵。此外也可用别名 `nanomuse-desktop`。
 
 ---
 
