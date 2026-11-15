@@ -26,6 +26,7 @@
         # 第三方软件
         chatgpt = final.callPackage ./pkgs/external/chatgpt { };
         chatgpt-desktop = final.chatgpt;
+        newbee = final.callPackage ./pkgs/external/newbee { };
         nanomuse = final.callPackage ./pkgs/external/nanomuse { };
         nanomuse-desktop = final.nanomuse;
       };
@@ -44,6 +45,7 @@
           otomusic = pkgs.otomusic;
           chatgpt = pkgs.chatgpt;
           chatgpt-desktop = pkgs.chatgpt-desktop;
+          newbee = pkgs.newbee;
           nanomuse = pkgs.nanomuse;
           nanomuse-desktop = pkgs.nanomuse-desktop;
           default = pkgs.quickflare;
@@ -54,6 +56,7 @@
           komiraquake = flake-utils.lib.mkApp { drv = pkgs.komiraquake; };
           otomusic = flake-utils.lib.mkApp { drv = pkgs.otomusic; };
           chatgpt = flake-utils.lib.mkApp { drv = pkgs.chatgpt; };
+          newbee = flake-utils.lib.mkApp { drv = pkgs.newbee; };
           nanomuse = flake-utils.lib.mkApp { drv = pkgs.nanomuse; };
           default = self.apps.${system}.quickflare;
         };
