@@ -26,9 +26,11 @@
         # 第三方软件
         chatgpt = final.callPackage ./pkgs/external/chatgpt { };
         chatgpt-desktop = final.chatgpt;
-        newbee = final.callPackage ./pkgs/external/newbee { };
         nanomuse = final.callPackage ./pkgs/external/nanomuse { };
         nanomuse-desktop = final.nanomuse;
+        minecraft-launcher = final.callPackage ./pkgs/external/minecraft-launcher { };
+        opentrace = final.callPackage ./pkgs/external/opentrace { };
+        osu-lazer-bin = final.callPackage ./pkgs/external/osu-lazer-bin { };
       };
     in
     flake-utils.lib.eachDefaultSystem (system:
@@ -45,9 +47,11 @@
           otomusic = pkgs.otomusic;
           chatgpt = pkgs.chatgpt;
           chatgpt-desktop = pkgs.chatgpt-desktop;
-          newbee = pkgs.newbee;
           nanomuse = pkgs.nanomuse;
           nanomuse-desktop = pkgs.nanomuse-desktop;
+          minecraft-launcher = pkgs.minecraft-launcher;
+          opentrace = pkgs.opentrace;
+          osu-lazer-bin = pkgs.osu-lazer-bin;
           default = pkgs.quickflare;
         };
 
@@ -56,8 +60,10 @@
           komiraquake = flake-utils.lib.mkApp { drv = pkgs.komiraquake; };
           otomusic = flake-utils.lib.mkApp { drv = pkgs.otomusic; };
           chatgpt = flake-utils.lib.mkApp { drv = pkgs.chatgpt; };
-          newbee = flake-utils.lib.mkApp { drv = pkgs.newbee; };
           nanomuse = flake-utils.lib.mkApp { drv = pkgs.nanomuse; };
+          minecraft-launcher = flake-utils.lib.mkApp { drv = pkgs.minecraft-launcher; };
+          opentrace = flake-utils.lib.mkApp { drv = pkgs.opentrace; };
+          osu-lazer-bin = flake-utils.lib.mkApp { drv = pkgs.osu-lazer-bin; };
           default = self.apps.${system}.quickflare;
         };
       }
