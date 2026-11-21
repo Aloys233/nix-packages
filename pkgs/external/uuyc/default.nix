@@ -167,6 +167,10 @@ stdenv.mkDerivation (finalAttrs: {
     mkdir -p $out/opt/uuyc $out/lib/uuyc $out/share $out/bin
 
     cp -r opt/uuyc/* $out/opt/uuyc/
+
+    # uuyc_server 会在安装根目录下创建 config/sensor/{server,client}（需要可写），
+    # 这里预留空目录作为 systemd BindPaths 的挂载点
+    mkdir -p $out/opt/uuyc/config
     cp -r usr/lib/uuyc/* $out/lib/uuyc/
     cp -r usr/share/* $out/share/
 
@@ -213,7 +217,8 @@ Environment=TERMINFO_DIRS=$out/opt/uuyc/share/terminfo
 Environment=SSL_CERT_FILE=${cacert}/etc/ssl/certs/ca-bundle.crt
 Environment=SSL_CERT_DIR=/etc/ssl/certs
 Environment=CURL_CA_BUNDLE=${cacert}/etc/ssl/certs/ca-bundle.crt
-Environment=PATH=${lib.makeBinPath [ systemd glib dbus ]}:/run/wrappers/bin:/run/current-system/sw/bin:/usr/bin:/bin"
+Environment=PATH=${lib.makeBinPath [ systemd glib dbus ]}:/run/wrappers/bin:/run/current-system/sw/bin:/usr/bin:/bin
+BindPaths=/var/lib/Netease/uuyc-config:$out/opt/uuyc/config"
 
     # 提取 .ico 中的 256x256 PNG 图标，提高 Linux 桌面环境图标兼容性
     if [ -f $out/share/icons/hicolor/256x256/apps/uuyc.ico ]; then

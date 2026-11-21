@@ -72,6 +72,9 @@ in
         Type = "simple";
         ExecStart = "${cfg.package}/opt/uuyc/bin/uuyc_service";
         Sockets = [ "uuyc.socket" ];
+        # uuyc_server 要求在安装根目录下创建 config/sensor（只读的 /nix/store 无法满足，
+        # 否则 machine_storage_start 会失败、设备无法初始化并提示“无法连接至服务器 -100”）
+        BindPaths = [ "/var/lib/Netease/uuyc-config:${cfg.package}/opt/uuyc/config" ];
         RuntimeDirectory = "uuyc";
         RuntimeDirectoryMode = "0700";
         RuntimeDirectoryPreserve = "restart";
@@ -88,6 +91,7 @@ in
     systemd.tmpfiles.rules = [
       "d /var/lib/Netease 0755 root root -"
       "d /var/lib/Netease/uuyc 0755 root root -"
+      "d /var/lib/Netease/uuyc-config 0755 root root -"
       "C /var/lib/Netease/uuyc/install_config.ini 0644 root root - ${cfg.package}/lib/uuyc/install_config.ini"
       "d /var/lib/Netease/uuyc/cache 0700 root root -"
       "d /var/lib/Netease/uuyc/ftp_metadata 0700 root root -"
