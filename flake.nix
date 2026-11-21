@@ -31,6 +31,7 @@
         minecraft-launcher = final.callPackage ./pkgs/external/minecraft-launcher { };
         opentrace = final.callPackage ./pkgs/external/opentrace { };
         osu-lazer-bin = final.callPackage ./pkgs/external/osu-lazer-bin { };
+        uuyc = final.callPackage ./pkgs/external/uuyc { };
       };
     in
     flake-utils.lib.eachDefaultSystem (system:
@@ -52,6 +53,7 @@
           minecraft-launcher = pkgs.minecraft-launcher;
           opentrace = pkgs.opentrace;
           osu-lazer-bin = pkgs.osu-lazer-bin;
+          uuyc = pkgs.uuyc;
           default = pkgs.quickflare;
         };
 
@@ -64,10 +66,12 @@
           minecraft-launcher = flake-utils.lib.mkApp { drv = pkgs.minecraft-launcher; };
           opentrace = flake-utils.lib.mkApp { drv = pkgs.opentrace; };
           osu-lazer-bin = flake-utils.lib.mkApp { drv = pkgs.osu-lazer-bin; };
+          uuyc = flake-utils.lib.mkApp { drv = pkgs.uuyc; };
           default = self.apps.${system}.quickflare;
         };
       }
     ) // {
       overlays.default = overlay;
+      nixosModules.uuyc = import ./modules/uuyc.nix { inherit self; };
     };
 }
