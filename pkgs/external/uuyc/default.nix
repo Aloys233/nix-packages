@@ -1,7 +1,9 @@
 { lib
 , stdenv
-, fetchurl
+, stdenvNoCC
+, curl
 , dpkg
+, patchelf
 , autoPatchelfHook
 , wrapGAppsHook3
 , makeWrapper
@@ -10,11 +12,13 @@
 , alsa-lib
 , bubblewrap
 , cairo
+, coreutils
 , dbus
 , fontconfig
 , freetype
 , glib
 , glib-networking
+, gnugrep
 , gst_all_1
 , gtk3
 , libdrm
@@ -47,23 +51,84 @@
 }:
 
 let
-  version = "4.48.4.59255-1";
+  version = "4.48.6.41668-1";
+  installScriptUrl = "https://uuyc.163.com/install.sh";
 
   sources = {
     x86_64-linux = {
-      # 官方标准下载入口（会 302 跳转至对应版本的签名 deb 包，避免带 key1/key2 的临时链接过期）
-      url = "https://api.nrd.nie.163.com/api/v1/release/dl/8?channel=gwqd";
-      hash = "sha256-70k/8v4ZSuA8BF0mdIacUnfCuEbv2ynpOgInDNZTrwY=";
+      arch = "amd64";
+      hash = "sha256-zuxWT56AyJHR47WG5+FSCpjmw+mJl0AMjl+2PxRb8Ho=";
     };
   };
 
   currentSource = sources.${stdenv.hostPlatform.system}
     or (throw "Unsupported system: ${stdenv.hostPlatform.system}");
 
-  src = fetchurl {
-    name = "nrd-uuyc_${version}_amd64.deb";
-    url = currentSource.url;
-    hash = currentSource.hash;
+  # 从官方安装脚本 https://uuyc.163.com/install.sh 解析 RELEASE_PACKAGE_URL 并获取对应的 deb 包
+  src = stdenvNoCC.mkDerivation {
+    name = "nrd-uuyc_${version}_${currentSource.arch}.deb";
+
+    nativeBuildInputs = [
+      curl
+      dpkg
+    ];
+
+    SSL_CERT_FILE = "${cacert}/etc/ssl/certs/ca-bundle.crt";
+
+    outputHashMode = "flat";
+    outputHashAlgo = "sha256";
+    outputHash = currentSource.hash;
+
+    preferLocalBuild = true;
+    impureEnvVars = lib.fetchers.proxyImpureEnvVars;
+
+    dontUnpack = true;
+    dontConfigure = true;
+    dontBuild = true;
+    dontFixup = true;
+
+    installPhase = ''
+      install_script="$TMPDIR/install.sh"
+      curl --fail --show-error --silent --location --proto '=https' --proto-redir '=https' \
+        --connect-timeout 15 --max-time 60 --retry 2 \
+        --output "$install_script" -- "${installScriptUrl}"
+
+      package_url="$(tr -d '\r' < "$install_script" \
+        | sed -n "s/^[[:space:]]*RELEASE_PACKAGE_URL=['\"]\([^'\"]*\)['\"][[:space:]]*$/\1/p" \
+        | head -n 1)"
+
+      if [ -z "$package_url" ]; then
+        echo "错误：未能从 ${installScriptUrl} 中解析出 RELEASE_PACKAGE_URL" >&2
+        exit 1
+      fi
+
+      if ! printf '%s\n' "$package_url" | grep -Eq '^https://[A-Za-z0-9][A-Za-z0-9.-]*(:[0-9]+)?/[^[:space:]]+$'; then
+        echo "错误：解析到的下载链接不合法: $package_url" >&2
+        exit 1
+      fi
+
+      echo "Fetching uuyc package from $package_url (via ${installScriptUrl})..." >&2
+      curl --fail --show-error --location --proto '=https' --proto-redir '=https' \
+        --connect-timeout 15 --max-time 600 --retry 2 \
+        --output "$out" -- "$package_url"
+
+      # 校验 deb 包元数据（与官方 install.sh 校验逻辑保持一致）
+      pkg_name="$(dpkg-deb -f "$out" Package)"
+      pkg_arch="$(dpkg-deb -f "$out" Architecture)"
+      pkg_ver="$(dpkg-deb -f "$out" Version)"
+
+      if [ "$pkg_name" != "uuyc" ]; then
+        echo "错误：deb 包名不匹配，期望 uuyc，实际 $pkg_name" >&2
+        exit 1
+      fi
+      if [ "$pkg_arch" != "${currentSource.arch}" ]; then
+        echo "错误：deb 架构不匹配，期望 ${currentSource.arch}，实际 $pkg_arch" >&2
+        exit 1
+      fi
+      if [ "$pkg_ver" != "${version}" ]; then
+        echo "提示：上游最新版本 ($pkg_ver) 与当前声明版本 (${version}) 不同，请同步更新 version 与 hash" >&2
+      fi
+    '';
   };
 
   # dlopen 动态加载的库以及运行期图形/多媒体依赖，写入各 ELF 的 RUNPATH
@@ -96,6 +161,7 @@ stdenv.mkDerivation (finalAttrs: {
 
   nativeBuildInputs = [
     dpkg
+    patchelf
     autoPatchelfHook
     wrapGAppsHook3
     makeWrapper
@@ -217,8 +283,22 @@ Environment=TERMINFO_DIRS=$out/opt/uuyc/share/terminfo
 Environment=SSL_CERT_FILE=${cacert}/etc/ssl/certs/ca-bundle.crt
 Environment=SSL_CERT_DIR=/etc/ssl/certs
 Environment=CURL_CA_BUNDLE=${cacert}/etc/ssl/certs/ca-bundle.crt
-Environment=PATH=${lib.makeBinPath [ systemd glib dbus ]}:/run/wrappers/bin:/run/current-system/sw/bin:/usr/bin:/bin
+Environment=PATH=${lib.makeBinPath [ systemd glib dbus coreutils gnugrep ]}:/run/wrappers/bin:/run/current-system/sw/bin:/usr/bin:/bin
 BindPaths=/var/lib/Netease/uuyc-config:$out/opt/uuyc/config"
+
+    # 编译环境变量补齐共享库，并通过 patchelf 注入到服务组件中
+    # 彻底解决 uuyc_service 启动子进程时清空 PATH、丢弃 SSL/D-Bus/GPU 驱动及 NRD_LOG_ROOT 导致的 -100 报错
+    cp ${./env_inject.c} $out/opt/uuyc/lib/libuuyc_env_inject.c
+    substituteInPlace $out/opt/uuyc/lib/libuuyc_env_inject.c \
+      --subst-var-by cacert "${cacert}" \
+      --subst-var-by out "$out" \
+      --subst-var-by binPath "${lib.makeBinPath [ systemd glib dbus coreutils gnugrep ]}:/run/wrappers/bin:/run/current-system/sw/bin"
+    $CC -shared -fPIC -O2 -Wall $out/opt/uuyc/lib/libuuyc_env_inject.c -o $out/opt/uuyc/lib/libuuyc_env_inject.so
+    rm $out/opt/uuyc/lib/libuuyc_env_inject.c
+
+    for bin in $out/opt/uuyc/bin/uuyc_server $out/opt/uuyc/bin/uuyc_service $out/opt/uuyc/bin/uuyc_healthd; do
+      patchelf --add-needed libuuyc_env_inject.so "$bin"
+    done
 
     # 提取 .ico 中的 256x256 PNG 图标，提高 Linux 桌面环境图标兼容性
     if [ -f $out/share/icons/hicolor/256x256/apps/uuyc.ico ]; then

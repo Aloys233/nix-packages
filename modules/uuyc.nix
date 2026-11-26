@@ -75,6 +75,7 @@ in
         # uuyc_server 要求在安装根目录下创建 config/sensor（只读的 /nix/store 无法满足，
         # 否则 machine_storage_start 会失败、设备无法初始化并提示“无法连接至服务器 -100”）
         BindPaths = [ "/var/lib/Netease/uuyc-config:${cfg.package}/opt/uuyc/config" ];
+        ExecStartPre = "-${pkgs.coreutils}/bin/rm -rf /tmp/uuyc-runtime-0";
         RuntimeDirectory = "uuyc";
         RuntimeDirectoryMode = "0700";
         RuntimeDirectoryPreserve = "restart";
@@ -113,6 +114,8 @@ in
       "d /var/log/uuyc/uuyc-cli/log 1777 root root -"
       "d /var/log/uuyc/webview_host 1777 root root -"
 
+      "d /tmp/uuyc-runtime-0 0700 root root -"
+
       "d /opt/uuyc 0755 root root -"
       "d /opt/uuyc/libexec 0755 root root -"
       "d /opt/uuyc/share 0755 root root -"
@@ -124,8 +127,12 @@ in
       "d /usr/lib/uuyc 0755 root root -"
       "L+ /usr/lib/uuyc/uuyc-gui-session-start - - - - ${cfg.package}/lib/uuyc/uuyc-gui-session-start"
       "L /usr/bin/systemd-run - - - - /run/current-system/sw/bin/systemd-run"
+      "L /usr/bin/loginctl - - - - /run/current-system/sw/bin/loginctl"
+      "L /usr/bin/systemctl - - - - /run/current-system/sw/bin/systemctl"
       "L /usr/bin/gdbus - - - - ${pkgs.glib}/bin/gdbus"
       "L /usr/bin/gsettings - - - - ${pkgs.glib}/bin/gsettings"
+      "L /bin/sh - - - - /run/current-system/sw/bin/sh"
+      "L /bin/bash - - - - /run/current-system/sw/bin/bash"
     ];
   };
 }

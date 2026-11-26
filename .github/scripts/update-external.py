@@ -5,6 +5,8 @@ import json
 import os
 import re
 import subprocess
+import shutil
+import urllib.error
 import urllib.request
 
 USER_AGENT = "curl/7.88.1"
@@ -24,6 +26,24 @@ def fetch_url(url: str, headers: dict | None = None) -> str:
     req = urllib.request.Request(url, headers=req_headers)
     with urllib.request.urlopen(req, timeout=30) as resp:
         return resp.read().decode("utf-8")
+
+
+class _NoRedirectHandler(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+def fetch_redirect_location(url: str) -> str | None:
+    """获取 URL 的 3xx 重定向目标地址（不自动跟随）"""
+    opener = urllib.request.build_opener(_NoRedirectHandler)
+    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT}, method="HEAD")
+    try:
+        with opener.open(req, timeout=30) as resp:
+            return resp.headers.get("Location")
+    except urllib.error.HTTPError as e:
+        if e.code in (301, 302, 303, 307, 308):
+            return e.headers.get("Location")
+        raise
 
 
 def read_local_version(default_nix_path: str) -> str | None:
@@ -175,11 +195,82 @@ def update_osu_lazer_bin(
     return True, latest_version
 
 
+def update_uuyc(
+    default_nix_path: str = "pkgs/external/uuyc/default.nix",
+    force: bool = False,
+):
+    """检查并更新 uuyc 包（从 https://uuyc.163.com/install.sh 获取下载地址）"""
+    install_script_url = "https://uuyc.163.com/install.sh"
+    print(f"Checking uuyc updates via {install_script_url}...")
+
+    script_content = fetch_url(install_script_url).replace("\r\n", "\n")
+    url_match = re.search(
+        r"""^\s*RELEASE_PACKAGE_URL=['"]([^'"]+)['"]\s*$""",
+        script_content,
+        re.MULTILINE,
+    )
+    if not url_match:
+        raise ValueError(f"未能从 {install_script_url} 中解析出 RELEASE_PACKAGE_URL")
+
+    package_url = url_match.group(1)
+    print(f"Resolved uuyc package URL: {package_url}")
+
+    local_version = read_local_version(default_nix_path)
+    print(f"Current local uuyc version: {local_version}")
+
+    # 优先检查 302 重定向文件名中的版本号，避免无更新时重复下载 deb 包
+    hint_version = None
+    location = fetch_redirect_location(package_url)
+    if location:
+        ver_match = re.search(r"nrd-uuyc_([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+-[0-9]+)_amd64\.deb", location)
+        if ver_match:
+            hint_version = ver_match.group(1)
+            print(f"Latest upstream uuyc version (from redirect): {hint_version}")
+            if not force and local_version == hint_version:
+                print("uuyc is already up to date喵！")
+                return False, hint_version
+
+    prefetch_info = nix_prefetch_file(package_url)
+    linux_sri = prefetch_info["hash"]
+    store_path = prefetch_info["storePath"]
+
+    latest_version = hint_version
+    if shutil.which("dpkg-deb"):
+        pkg_name = subprocess.check_output(["dpkg-deb", "-f", store_path, "Package"], text=True).strip()
+        pkg_arch = subprocess.check_output(["dpkg-deb", "-f", store_path, "Architecture"], text=True).strip()
+        pkg_ver = subprocess.check_output(["dpkg-deb", "-f", store_path, "Version"], text=True).strip()
+        if pkg_name != "uuyc":
+            raise ValueError(f"uuyc deb 包名不匹配: {pkg_name}")
+        if pkg_arch != "amd64":
+            raise ValueError(f"uuyc deb 架构不匹配: {pkg_arch}")
+        latest_version = pkg_ver
+
+    if not latest_version:
+        raise ValueError("无法从重定向地址或 deb 元数据中解析 uuyc 版本号")
+
+    print(f"Latest upstream uuyc version: {latest_version}")
+    print(f"  x86_64-linux SRI: {linux_sri}")
+
+    if not force and local_version == latest_version:
+        print("uuyc is already up to date喵！")
+        return False, latest_version
+
+    print(f"Updating uuyc: {local_version} -> {latest_version}...")
+    apply_nix_updates(
+        default_nix_path,
+        latest_version,
+        {"x86_64-linux": linux_sri},
+    )
+
+    print(f"Successfully updated {default_nix_path}喵！")
+    return True, latest_version
+
+
 def main():
     parser = argparse.ArgumentParser(description="Check and update external packages")
     parser.add_argument(
         "--package",
-        choices=["chatgpt", "osu-lazer-bin", "all"],
+        choices=["chatgpt", "osu-lazer-bin", "uuyc", "all"],
         default="all",
         help="Target package to check",
     )
@@ -197,6 +288,11 @@ def main():
         updated, ver = update_osu_lazer_bin(force=args.force)
         if updated:
             updated_packages.append(f"osu-lazer-bin={ver}")
+
+    if args.package in ["uuyc", "all"]:
+        updated, ver = update_uuyc(force=args.force)
+        if updated:
+            updated_packages.append(f"uuyc={ver}")
 
     gh_output = os.environ.get("GITHUB_OUTPUT")
     if gh_output:
