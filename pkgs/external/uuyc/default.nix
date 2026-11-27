@@ -51,13 +51,13 @@
 }:
 
 let
-  version = "4.48.6.41668-1";
+  version = "4.48.7.27441-1";
   installScriptUrl = "https://uuyc.163.com/install.sh";
 
   sources = {
     x86_64-linux = {
       arch = "amd64";
-      hash = "sha256-zuxWT56AyJHR47WG5+FSCpjmw+mJl0AMjl+2PxRb8Ho=";
+      hash = "sha256-e+RW6AEr/MqNDa0IYyZaO9J1bWxMDKe6E8xlwe9kzQA=";
     };
   };
 
